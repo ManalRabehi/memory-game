@@ -12,6 +12,7 @@ let interval;
 let firstCard = false;
 let secondCard = false;
 let firstCardValue, secondCardValue;
+let isProcessing = false;
 
 // Items array (make sure the total number of unique items is even)
 const items = [
@@ -93,41 +94,47 @@ const matrixGenerator = (cardValues, size = 4) => {
   // Add click event to each card
   cards.forEach((card) => {
     card.addEventListener("click", () => {
-      if (!card.classList.contains("matched") && !card.classList.contains("flipped")) {
-        card.classList.add("flipped");
+      if (isProcessing || card.classList.contains("matched") || card.classList.contains("flipped")) {
+        return;
+      }
 
-        if (!firstCard) {
-          // First card
-          firstCard = card;
-          firstCardValue = card.getAttribute("data-card-value");
-        } else {
-          // Second card
-          movesCounter();
-          secondCard = card;
-          secondCardValue = card.getAttribute("data-card-value");
+      card.classList.add("flipped");
 
-          if (firstCardValue === secondCardValue) {
-            // Matched
-            firstCard.classList.add("matched");
-            secondCard.classList.add("matched");
-            firstCard = false;
-            winCount += 1;
+      if (!firstCard) {
+        // First card
+        firstCard = card;
+        firstCardValue = card.getAttribute("data-card-value");
+      } else {
+        // Second card
+        isProcessing = true;
+        movesCounter();
+        secondCard = card;
+        secondCardValue = card.getAttribute("data-card-value");
 
-            // Check if all pairs matched
-            if (winCount === Math.floor(cardValues.length / 2)) {
-              result.innerHTML = `<h2>You Won!</h2><h4>Moves: ${movesCount}</h4>`;
-              stopGame();
-            }
-          } else {
-            // Not matched — flip back
-            let [tempFirst, tempSecond] = [firstCard, secondCard];
-            firstCard = false;
-            secondCard = false;
-            setTimeout(() => {
-              tempFirst.classList.remove("flipped");
-              tempSecond.classList.remove("flipped");
-            }, 900);
+        if (firstCardValue === secondCardValue) {
+          // Matched
+          firstCard.classList.add("matched");
+          secondCard.classList.add("matched");
+          firstCard = false;
+          secondCard = false;
+          isProcessing = false;
+          winCount += 1;
+
+          // Check if all pairs matched
+          if (winCount === Math.floor(cardValues.length / 2)) {
+            result.innerHTML = `<h2>You Won!</h2><h4>Moves: ${movesCount}</h4>`;
+            stopGame();
           }
+        } else {
+          // Not matched — flip back
+          let [tempFirst, tempSecond] = [firstCard, secondCard];
+          firstCard = false;
+          secondCard = false;
+          setTimeout(() => {
+            tempFirst.classList.remove("flipped");
+            tempSecond.classList.remove("flipped");
+            isProcessing = false;
+          }, 900);
         }
       }
     });
@@ -161,6 +168,9 @@ stopButton.addEventListener("click", stopGame);
 const initializer = () => {
   result.innerText = "";
   winCount = 0;
+  isProcessing = false;
+  firstCard = false;
+  secondCard = false;
   let cardValues = generateRandom();
   matrixGenerator(cardValues);
 };
